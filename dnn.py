@@ -20,7 +20,7 @@ def load_data(data_file):
 
     train_set = meta.train & (meta.sent_type != 'sa') & np.logical_not(validation_mask)
     valid_set = meta.train & (meta.sent_type != 'sa') & validation_mask
-    test_set = meta.core_test & (meta.sent_type != 'sa')
+    test_set = (~meta.train) & (meta.sent_type != 'sa')
 
     train_x = store.select('X', 'file in meta.index[train_set]').values
     train_y = store.select('y', 'file in meta.index[train_set]').values
