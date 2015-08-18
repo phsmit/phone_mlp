@@ -9,27 +9,42 @@ import numpy
 
 import theano.tensor as T
 import theano
+import pandas as pd
 
-def load_data(data_dir):
-    train_x = np.load(join(data_dir,"timit_dr1_train.npy"))
-    test_x = np.load(join(data_dir,"timit_dr1_test.npy"))
+def load_data(data_file):
+    store = pd.HDFStore(data_file)
+    meta = store.meta
 
-    train_y = [l.strip() for l in open(join(data_dir,"timit_dr1_train.labs"))]
-    test_y = [l.strip() for l in open(join(data_dir,"timit_dr1_test.labs"))]
+    np.random.seed('deep')
+    validation_mask = np.random.rand(len(meta)) > 0.75
 
-    num_train = int(len(train_y) * .75)
-    valid_x = train_x[num_train:]
-    valid_y = train_y[num_train:]
-    train_x = train_x[:num_train]
-    train_y = train_y[:num_train]
+    train_set = meta.train & (meta.sent_type != 'sa') & np.logical_not(validation_mask)
+    valid_set = meta.train & (meta.sent_type != 'sa') & validation_mask
+    test_set = meta.core_eval & (meta.sent_type != 'sa')
 
+    train_x = store.select('X', 'file in meta.index[train_set]').values()
+    train_y = store.select('y', 'file in meta.index[train_set]').values()
+
+    valid_x = store.select('X', 'file in meta.index[valid_set]').values()
+    valid_y = store.select('y', 'file in meta.index[valid_set]').values()
+
+    test_x = store.select('X', 'file in meta.index[test_set]').values()
+    test_y = store.select('y', 'file in meta.index[test_set]').values()
+
+    store.close()
+
+    m = train_x.mean(axis=0)
+    std = train_x.std(axis=0)
+
+    train_x = (train_x - m) / std
+    valid_x = (valid_x - m) / std
+    test_x = (test_x - m) / std
 
     phones = list(sorted(set(train_y + valid_y + test_y)))
 
     train_y = [phones.index(p) for p in train_y]
     valid_y = [phones.index(p) for p in valid_y]
     test_y = [phones.index(p) for p in test_y]
-
 
 
     def shared_dataset(data_xy, borrow=True):
