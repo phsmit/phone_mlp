@@ -16,21 +16,23 @@ def load_data(data_file):
     store = pd.HDFStore(data_file)
     meta = store.meta
 
-    np.random.seed('deep')
+    np.random.seed(839282)
     validation_mask = np.random.rand(len(meta)) > 0.75
 
     train_set = meta.train & (meta.sent_type != 'sa') & np.logical_not(validation_mask)
     valid_set = meta.train & (meta.sent_type != 'sa') & validation_mask
-    test_set = meta.core_eval & (meta.sent_type != 'sa')
+    test_set = meta.core_test & (meta.sent_type != 'sa')
 
-    train_x = store.select('X', 'file in meta.index[train_set]').values()
-    train_y = store.select('y', 'file in meta.index[train_set]').values()
+    test_x = store.select('X', 'file in meta.index[valid_set]').values
 
-    valid_x = store.select('X', 'file in meta.index[valid_set]').values()
-    valid_y = store.select('y', 'file in meta.index[valid_set]').values()
+    test_x = np.zeros((201,201))
+    train_x = store.select('X', 'file in meta.index[train_set]').values
+    train_y = store.select('y', 'file in meta.index[train_set]').values
 
-    test_x = store.select('X', 'file in meta.index[test_set]').values()
-    test_y = store.select('y', 'file in meta.index[test_set]').values()
+    valid_x = store.select('X', 'file in meta.index[valid_set]').values
+    valid_y = store.select('y', 'file in meta.index[valid_set]').values
+
+    test_y = store.select('y', 'file in meta.index[valid_set]').values
 
     store.close()
 
@@ -41,7 +43,7 @@ def load_data(data_file):
     valid_x = (valid_x - m) / std
     test_x = (test_x - m) / std
 
-    phones = list(sorted(set(train_y + valid_y + test_y)))
+    phones = list(sorted(set(train_y.flatten().tolist() + valid_y.flatten().tolist() + test_y.flatten().tolist())))
 
     train_y = [phones.index(p) for p in train_y]
     valid_y = [phones.index(p) for p in valid_y]
