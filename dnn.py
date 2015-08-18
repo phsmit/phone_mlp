@@ -22,16 +22,14 @@ def load_data(data_file):
     valid_set = meta.train & (meta.sent_type != 'sa') & validation_mask
     test_set = meta.core_test & (meta.sent_type != 'sa')
 
-    test_x = store.select('X', 'file in meta.index[valid_set]').values
-
-    test_x = np.zeros((201,201))
     train_x = store.select('X', 'file in meta.index[train_set]').values
     train_y = store.select('y', 'file in meta.index[train_set]').values
 
     valid_x = store.select('X', 'file in meta.index[valid_set]').values
     valid_y = store.select('y', 'file in meta.index[valid_set]').values
 
-    test_y = store.select('y', 'file in meta.index[valid_set]').values
+    test_x = store.select('X', 'file in meta.index[test_set]').values
+    test_y = store.select('y', 'file in meta.index[test_set]').values
 
     store.close()
 
@@ -598,4 +596,4 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
 if __name__ == '__main__':
-    test_mlp()
+    test_mlp(dataset=sys.argv[1])
