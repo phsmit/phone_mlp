@@ -439,22 +439,22 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
         n_out=n_hidden
     )
 
-	layer2 = MLP(
+    layer2 = MLP(
         rng=rng,
         input=layer1.outputs,
         n_in=n_hidden,
         n_hidden=n_hidden,
         n_out=61
     )
-	
+
     # start-snippet-4
     # the cost we minimize during training is the negative log likelihood of
     # the model plus the regularization terms (L1 and L2); cost is expressed
     # here symbolically
     cost = (
         layer2.negative_log_likelihood(y)
-        + L1_reg * classifier.L1
-        + L2_reg * classifier.L2_sqr
+        + L1_reg * layer2.L1
+        + L2_reg * layer2.L2_sqr
     )
     # end-snippet-4
 
@@ -481,8 +481,10 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     # start-snippet-5
     # compute the gradient of cost with respect to theta (sotred in params)
     # the resulting gradients will be stored in a list gparams
-    gparams = [T.grad(cost, param) for param in layer1.params + layer2.params]
-	
+    params = layer1.params + layer2.params
+    
+    gparams = [T.grad(cost, param) for param in params]
+
     # specify how to update the parameters of the model as a list of
     # (variable, update expression) pairs
 
@@ -492,7 +494,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     #    C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
     updates = [
         (param, param - learning_rate * gparam)
-        for param, gparam in zip(classifier.params, gparams)
+        for param, gparam in zip(params, gparams)
     ]
 
     # compiling a Theano function `train_model` that returns the cost, but
