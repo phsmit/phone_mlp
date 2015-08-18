@@ -379,6 +379,101 @@ class MLP(object):
         self.input = input
 
 
+class DNN(object):
+    """ Multilayer perceptron with multiple layers """
+
+    def __init__(self, rng, input, n_in, n_layers, n_hidden, n_out, activation_function=T.tanh):
+        """Initialize the parameters for the multilayer perceptron
+
+        :type rng: numpy.random.RandomState
+        :param rng: a random number generator used to initialize weights
+
+        :type input: theano.tensor.TensorType
+        :param input: symbolic variable that describes the input of the
+        architecture (one minibatch)
+
+        :type n_in: int
+        :param n_in: number of input units, the dimension of the space in
+        which the datapoints lie
+
+        :type n_hidden: int
+        :param n_hidden: number of hidden units
+
+        :type n_out: int
+        :param n_out: number of output units, the dimension of the space in
+        which the labels lie
+
+        """
+
+        if len(n_hidden) != n_layers:
+            print >>sys.stderr, "Define %i number of hidden layer sizes" % n_layers
+            return
+
+        # Since we are dealing with a one hidden layer MLP, this will translate
+        # into a HiddenLayer with a tanh activation function connected to the
+        # LogisticRegression layer; the activation function can be replaced by
+        # sigmoid or any other nonlinear function
+
+        hl_input = input
+        hl_n_in = n_in
+        self.hidden_layers = []
+
+        for li in range(n_layers):
+
+            hlayer = HiddenLayer(
+                rng=rng,
+                input=hl_input,
+                n_in=hl_n_in,
+                n_out=n_hidden[li],
+                activation=activation_function
+            )
+
+            hl_n_in = n_hidden[li]
+            hl_input = hlayer.output
+
+            self.hidden_layers.append(hlayer)
+
+        # The logistic regression layer gets as input the hidden units
+        # of the hidden layer
+        self.logRegressionLayer = LogisticRegression(
+            input=self.hidden_layers[-1].output,
+            n_in=n_hidden[-1],
+            n_out=n_out
+        )
+        # end-snippet-2 start-snippet-3
+        # L1 norm ; one regularization option is to enforce L1 norm to
+        # be small
+
+        self.L1 = abs(self.logRegressionLayer.W).sum()
+        for hli in range(len(self.hidden_layers)):
+            self.L1 += abs(self.hidden_layers[hli].W).sum()
+        self.L1 = (self.L1)
+
+        # square of L2 norm ; one regularization option is to enforce
+        # square of L2 norm to be small
+
+        self.L2_sqr = abs(self.logRegressionLayer.W ** 2).sum()
+        for hli in range(len(self.hidden_layers)):
+            self.L2_sqr += abs(self.hidden_layers[hli].W ** 2).sum()
+        self.L2_sqr = (self.L2_sqr)
+
+        # negative log likelihood of the MLP is given by the negative
+        # log likelihood of the output of the model, computed in the
+        # logistic regression layer
+        self.negative_log_likelihood = (
+            self.logRegressionLayer.negative_log_likelihood
+        )
+        # same holds for the function computing the number of errors
+        self.errors = self.logRegressionLayer.errors
+
+        self.params = self.logRegressionLayer.params
+        for hli in range(len(self.hidden_layers)):
+            self.params += self.hidden_layers[hli].params
+
+        # keep track of model input
+        self.input = input
+
+
 def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
              dataset='data2.hdfs', batch_size=20, n_hidden=500):
     """
@@ -440,6 +535,20 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
         n_hidden=n_hidden,
         n_out=61
     )
+
+
+    # construct the DNN
+    """
+    classifier = DNN(
+        rng=rng,
+        input=x,
+        n_in=201,
+        n_layers=2,
+        n_hidden=[n_hidden,n_hidden],
+        n_out=61
+        activation_function=T.tanh
+    )
+    """
 
     # start-snippet-4
     # the cost we minimize during training is the negative log likelihood of
