@@ -397,7 +397,7 @@ class MLP(object):
 class DNN(object):
     """ Multilayer perceptron with multiple layers """
 
-    def __init__(self, rng, input, n_in, n_layers, n_hidden, n_out, activation_function=T.tanh):
+    def __init__(self, rng, input, n_in, n_layers, n_hidden, n_out, noise_level, activation_function=T.tanh):
         """Initialize the parameters for the multilayer perceptron
 
         :type rng: numpy.random.RandomState
@@ -429,7 +429,11 @@ class DNN(object):
         # LogisticRegression layer; the activation function can be replaced by
         # sigmoid or any other nonlinear function
 
-        hl_input = input
+
+        self.srng = RandomStreams(seed=234)
+        noisy_input = input + noise_level * self.srng.normal(input.shape)
+
+        hl_input = noisy_input
         hl_n_in = n_in
         self.hidden_layers = []
 
