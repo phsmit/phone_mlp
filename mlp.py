@@ -37,6 +37,13 @@ def load_data(data_file):
 
     store.close()
 
+
+    print '... shuffling the data'
+    p = np.random.permutation(train_x.shape[0])
+    train_x = train_x[p]
+    train_y = train_y[p]
+
+
     m = train_x.mean(axis=0)
     std = train_x.std(axis=0)
 
