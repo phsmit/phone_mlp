@@ -13,6 +13,7 @@ import theano
 import pandas as pd
 
 def load_data(data_file):
+    print '... loading the data'
     store = pd.HDFStore(data_file)
     meta = store.meta
 
@@ -21,16 +22,18 @@ def load_data(data_file):
 
     train_set = meta.train & (meta.sent_type != 'sa') & np.logical_not(validation_mask)
     valid_set = meta.train & (meta.sent_type != 'sa') & validation_mask
-    test_set = (~meta.train) & (meta.sent_type != 'sa')
+    test_set = meta.core_test & (meta.sent_type != 'sa')
+
+    print "%d training, %d validation, %d test" % (train_set.sum(), valid_set.sum(), test_set.sum())
 
     train_x = store.select('X', 'file in meta.index[train_set]').values
-    train_y = store.select('y', 'file in meta.index[train_set]').values
+    train_y = store.select('y', 'file in meta.index[train_set]')['conf_label'].values
 
     valid_x = store.select('X', 'file in meta.index[valid_set]').values
-    valid_y = store.select('y', 'file in meta.index[valid_set]').values
+    valid_y = store.select('y', 'file in meta.index[valid_set]')['conf_label'].values
 
     test_x = store.select('X', 'file in meta.index[test_set]').values
-    test_y = store.select('y', 'file in meta.index[test_set]').values
+    test_y = store.select('y', 'file in meta.index[test_set]')['conf_label'].values
 
     store.close()
 
